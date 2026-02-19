@@ -1,0 +1,6 @@
+get-pip.py
+*.db
+__pycache__/
+*.pyc
+.DS_Store
+data/processed/
