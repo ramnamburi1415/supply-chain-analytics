@@ -1,0 +1,31 @@
+supplier_id,supplier_name,country,reliability_score,avg_lead_time_days,contract_value_usd
+SUP001,GlobalParts Inc,USA,0.77,14,970819.1
+SUP002,FastShip Co,China,0.77,2,283208.78
+SUP003,MegaSupply Ltd,Canada,0.9,8,1440827.34
+SUP004,Prime Logistics,Germany,0.88,10,1533530.84
+SUP005,QuickSource,China,0.94,2,1144490.54
+SUP006,EastCoast Supplies,USA,0.75,13,1553386.0
+SUP007,WestWave Goods,USA,0.81,9,1012901.41
+SUP008,TechParts USA,Mexico,0.75,12,1069329.02
+SUP009,GreenRoute Logistics,Mexico,0.92,20,883704.99
+SUP010,Apex Distribution,Canada,0.82,18,99567.3
+SUP011,Nexus Materials,China,0.76,9,260388.28
+SUP012,BlueStar Shipping,China,0.86,4,111286.91
+SUP013,Continental Goods,Mexico,0.71,4,1291000.3
+SUP014,Horizon Supplies,China,0.94,2,662994.16
+SUP015,Pacific Rim Traders,China,0.83,6,1041712.85
+SUP016,Mountain Supply Co,USA,0.81,11,1819754.62
+SUP017,SunBelt Logistics,Mexico,0.97,8,536119.85
+SUP018,Lakeside Distributors,Germany,0.91,10,850246.7
+SUP019,Coastal Freight,Mexico,0.79,8,1523324.72
+SUP020,MetroCore Supply,Germany,0.87,10,496156.42
+SUP021,Industrial Partners,USA,0.85,9,200110.82
+SUP022,Precision Parts Co,Canada,0.98,13,615015.33
+SUP023,United Distributors,China,0.94,3,364381.51
+SUP024,Gateway Logistics,USA,0.92,2,1862910.42
+SUP025,Summit Supply Chain,China,0.86,17,1625834.74
+SUP026,Riverdale Goods,Canada,0.87,6,1285137.33
+SUP027,Clearwater Supply,Canada,0.98,4,1749348.15
+SUP028,Ironclad Logistics,USA,0.88,13,1617160.55
+SUP029,Sterling Materials,Canada,0.78,9,413811.61
+SUP030,Velocity Freight,Germany,0.79,4,1790490.05

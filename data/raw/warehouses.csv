@@ -1,0 +1,11 @@
+warehouse_id,warehouse_name,region,capacity_units,operating_cost_per_day,manager
+WH01,Chicago Central,Midwest,12270,2599.85,Alice Johnson
+WH02,Los Angeles West,West,5860,4755.49,Bob Martinez
+WH03,New York East,East,10390,4002.25,Carol White
+WH04,Houston South,South,18418,2857.2,David Lee
+WH05,Phoenix Desert,West,10191,5905.33,Eva Brown
+WH06,Philadelphia Hub,East,16964,2338.47,Frank Garcia
+WH07,San Antonio TX,South,16284,6331.99,Grace Kim
+WH08,San Diego Port,West,10734,7631.32,Henry Wilson
+WH09,Dallas Fort Worth,South,11265,2004.67,Irene Taylor
+WH10,San Jose Tech,West,5466,7953.27,James Davis
