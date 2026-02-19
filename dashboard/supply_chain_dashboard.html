@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Supply Chain Performance Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d2e;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --green: #2ecc71;
+      --yellow: #f39c12;
+      --red: #e74c3c;
+      --text: #e0e6f0;
+      --muted: #8892a4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1a1d2e 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.3px; }
+    header h1 span { color: var(--accent); }
+    .header-meta { font-size: 0.8rem; color: var(--muted); text-align: right; }
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(46,204,113,0.15); color: var(--green);
+      border: 1px solid rgba(46,204,113,0.3);
+      padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+    }
+    .live-dot {
+      width: 7px; height: 7px; background: var(--green);
+      border-radius: 50%; animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── Layout ─────────────────────────────── */
+    main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+    h2 { font-size: 0.85rem; font-weight: 600; color: var(--muted);
+         text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+
+    /* ── KPI Cards ───────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .kpi-card.blue::before  { background: var(--accent); }
+    .kpi-card.green::before { background: var(--green); }
+    .kpi-card.yellow::before{ background: var(--yellow); }
+    .kpi-card.red::before   { background: var(--red); }
+    .kpi-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+    .kpi-value { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+    .kpi-value.green { color: var(--green); }
+    .kpi-value.yellow { color: var(--yellow); }
+    .kpi-value.red    { color: var(--red); }
+    .kpi-value.blue   { color: var(--accent); }
+    .kpi-sub { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+
+    /* ── Charts Grid ─────────────────────────── */
+    .charts-row {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+    .row-2 { grid-template-columns: 1fr 1fr; }
+    .row-3 { grid-template-columns: 1.6fr 1fr 1fr; }
+    .row-2b{ grid-template-columns: 1fr 1.4fr; }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .chart-card h3 {
+      font-size: 0.82rem; font-weight: 600; color: var(--text);
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .chart-card h3 .tag {
+      font-size: 0.65rem; color: var(--muted); background: rgba(255,255,255,0.05);
+      padding: 2px 8px; border-radius: 10px;
+    }
+    canvas { max-height: 260px; }
+
+    /* ── Table ───────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th {
+      text-align: left; padding: 10px 14px;
+      background: rgba(255,255,255,0.04);
+      color: var(--muted); font-weight: 600; font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    tbody tr:hover { background: rgba(79,142,247,0.06); }
+    tbody td { padding: 10px 14px; }
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: 0.68rem; font-weight: 700;
+    }
+    .badge-green { background: rgba(46,204,113,0.15); color: var(--green); }
+    .badge-yellow{ background: rgba(243,156,18,0.15); color: var(--yellow); }
+    .badge-red   { background: rgba(231,76,60,0.15);  color: var(--red); }
+
+    /* ── Bar fill ───────────────────────────── */
+    .bar-fill { background: rgba(255,255,255,0.07); border-radius: 4px; height: 6px; width: 100%; }
+    .bar-fill-inner { height: 100%; border-radius: 4px; background: var(--accent); }
+
+    footer {
+      text-align: center; color: var(--muted); font-size: 0.72rem;
+      padding: 20px; border-top: 1px solid var(--border); margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🚛 Supply Chain <span>Performance Analytics</span></h1>
+    <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">
+      10 Warehouses · 6 Carriers · 9,723 Shipments · Jan 2023 – Dec 2024
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="live-badge"><div class="live-dot"></div>LIVE DASHBOARD</div>
+    <div style="margin-top:6px">Last run: ETL Pipeline ✅</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- KPI CARDS -->
+  <h2>Executive KPIs</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-label">On-Time Delivery %</div>
+      <div class="kpi-value green">86.5%</div>
+      <div class="kpi-sub">Target: 90% | ⚠️ Gap: 3.5pp</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Total Shipments</div>
+      <div class="kpi-value blue">9,723</div>
+      <div class="kpi-sub">277 cancelled excluded</div>
+    </div>
+    <div class="kpi-card yellow">
+      <div class="kpi-label">Avg Shipment Cost</div>
+      <div class="kpi-value yellow">$203.72</div>
+      <div class="kpi-sub">Capped at 99th pct ($432)</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Total Spend</div>
+      <div class="kpi-value blue">$1.98M</div>
+      <div class="kpi-sub">2-year period</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Avg Delay (Days)</div>
+      <div class="kpi-value green">+0.54</div>
+      <div class="kpi-sub">Avg days past promised</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Late Deliveries</div>
+      <div class="kpi-value red">1,264</div>
+      <div class="kpi-sub">13% of shipments</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Best Carrier</div>
+      <div class="kpi-value blue" style="font-size:1.3rem">FedEx</div>
+      <div class="kpi-sub">88.5% OTD</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Top Warehouse</div>
+      <div class="kpi-value green" style="font-size:1.1rem">Philly Hub</div>
+      <div class="kpi-sub">89.5% OTD | Score: 54.8</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Monthly Trend + Carrier Bar -->
+  <div class="charts-row row-2">
+
+    <div class="chart-card">
+      <h3>📈 Monthly On-Time Delivery Trend <span class="tag">24 months</span></h3>
+      <canvas id="monthlyChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h3>🚚 Carrier Performance <span class="tag">OTD % vs Avg Cost</span></h3>
+      <canvas id="carrierChart"></canvas>
+    </div>
+
+  </div>
+
+  <!-- ROW 2: Warehouse OTD + Efficiency + Region Cost -->
+  <div class="charts-row row-3">
+
+    <div class="chart-card">
+      <h3>🏭 Warehouse On-Time Delivery % <span class="tag">ranking</span></h3>
+      <canvas id="warehouseOTD"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h3>⚡ Efficiency Score <span class="tag">composite</span></h3>
+      <canvas id="efficiencyChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h3>📦 Delivery Status Mix <span class="tag">all shipments</span></h3>
+      <canvas id="statusDonut"></canvas>
+    </div>
+
+  </div>
+
+  <!-- ROW 3: Priority analysis + Monthly Cost -->
+  <div class="charts-row row-2b">
+
+    <div class="chart-card">
+      <h3>🎯 Monthly Avg Shipment Cost Trend <span class="tag">USD</span></h3>
+      <canvas id="costTrend"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h3>🔴 Order Priority vs On-Time % <span class="tag">SLA check</span></h3>
+      <canvas id="priorityChart"></canvas>
+    </div>
+
+  </div>
+
+  <!-- WAREHOUSE TABLE -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <h3>🏭 Full Warehouse Performance Breakdown</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Warehouse</th><th>Region</th><th>Shipments</th>
+            <th>OTD %</th><th>Avg Cost</th><th>Total Spend</th>
+            <th>Avg Delay (d)</th><th>Efficiency</th><th>OTD Bar</th>
+          </tr>
+        </thead>
+        <tbody id="warehouseTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer>Supply Chain Performance Analytics Dashboard · Built with Python, Pandas, SQL · Portfolio Project</footer>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const wh = [
+  {name:'Chicago Central', region:'Midwest', ships:918, otd:85.4, cost:202.05, total:175988, delay:0.68, eff:52.53},
+  {name:'Los Angeles West',region:'West',    ships:917, otd:86.59,cost:204.94, total:179729, delay:0.58, eff:52.69},
+  {name:'New York East',   region:'East',    ships:911, otd:87.05,cost:199.30, total:173989, delay:0.47, eff:54.05},
+  {name:'Houston South',   region:'South',   ships:995, otd:86.03,cost:202.83, total:191677, delay:0.55, eff:52.76},
+  {name:'Phoenix Desert',  region:'West',    ships:953, otd:87.20,cost:204.10, total:182870, delay:0.50, eff:53.22},
+  {name:'Philadelphia Hub',region:'East',    ships:1014,otd:89.55,cost:203.26, total:196351, delay:0.43, eff:54.79},
+  {name:'San Antonio TX',  region:'South',   ships:1034,otd:86.17,cost:203.19, total:200751, delay:0.52, eff:52.77},
+  {name:'San Diego Port',  region:'West',    ships:959, otd:86.24,cost:205.17, total:187523, delay:0.53, eff:52.43},
+  {name:'Dallas Fort Worth',region:'South',  ships:992, otd:87.00,cost:208.77, total:195822, delay:0.56, eff:52.20},
+  {name:'San Jose Tech',   region:'West',    ships:1030,otd:85.83,cost:204.24, total:198312, delay:0.65, eff:52.37},
+];
+
+const monthly = {
+  periods: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec',
+            'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  years:   ['2023','2023','2023','2023','2023','2023','2023','2023','2023','2023','2023','2023',
+             '2024','2024','2024','2024','2024','2024','2024','2024','2024','2024','2024','2024'],
+  otd:    [85.2,83.09,85.36,86.25,83.02,85.07,81.67,82.88,83.51,82.78,83.41,84.35,
+           86.17,83.38,82.21,82.45,85.37,86.74,86.06,86.57,83.25,85.84,82.46,85.79],
+  cost:   [206.24,201.19,204.30,205.04,202.01,204.96,206.55,207.66,211.82,212.44,203.34,201.05,
+           206.50,199.75,198.68,208.66,196.36,198.64,203.47,205.56,194.59,201.37,201.85,209.33],
+};
+
+const carriers = {
+  names: ['Amazon Logistics','DHL','FedEx','UPS','USPS','XPO Freight'],
+  otd:   [87.62, 87.70, 88.54, 85.56, 84.41, 86.51],
+  cost:  [203.15,202.32,203.01,205.47,205.06,203.78],
+};
+
+const priorities = {
+  names:['Critical','High','Medium','Low'],
+  otd:  [87.92, 86.89, 86.57, 86.39],
+  cost: [201.87,205.12,204.36,202.87],
+};
+
+// ─── COLORS ─────────────────────────────────────────────────────────────────
+const ACCENT='#4f8ef7', GREEN='#2ecc71', YELLOW='#f39c12', RED='#e74c3c', PURPLE='#9b59b6';
+const PALETTE=['#4f8ef7','#2ecc71','#f39c12','#e74c3c','#9b59b6','#1abc9c'];
+
+const chartDefaults = {
+  plugins:{ legend:{labels:{color:'#8892a4',font:{size:11}}}},
+  scales:{
+    x:{ticks:{color:'#8892a4',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},
+    y:{ticks:{color:'#8892a4',font:{size:10}},grid:{color:'rgba(255,255,255,0.07)'}}
+  }
+};
+
+// ─── CHART 1: Monthly OTD Trend ──────────────────────────────────────────────
+new Chart(document.getElementById('monthlyChart'), {
+  type:'line',
+  data:{
+    labels: monthly.periods.map((p,i)=> i===0||i===12 ? `${p} ${monthly.years[i]}` :
+                                        i%3===0 ? p : ''),
+    datasets:[{
+      label:'OTD %',
+      data: monthly.otd,
+      borderColor: GREEN, backgroundColor:'rgba(46,204,113,0.1)',
+      fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:GREEN,
+    }]
+  },
+  options:{
+    ...chartDefaults,
+    plugins:{...chartDefaults.plugins,
+      annotation:{annotations:{line:{type:'line',yMin:90,yMax:90,borderColor:'rgba(231,76,60,0.5)',borderDash:[5,5],label:{content:'Target 90%',display:true}}}}
+    },
+    scales:{...chartDefaults.scales,
+      y:{...chartDefaults.scales.y, min:78, max:92,
+         ticks:{...chartDefaults.scales.y.ticks, callback:v=>v+'%'}}
+    }
+  }
+});
+
+// ─── CHART 2: Carrier Grouped Bar ────────────────────────────────────────────
+new Chart(document.getElementById('carrierChart'), {
+  type:'bar',
+  data:{
+    labels: carriers.names,
+    datasets:[
+      {label:'OTD %', data:carriers.otd, backgroundColor:'rgba(79,142,247,0.75)', yAxisID:'y'},
+      {label:'Avg Cost ($)',data:carriers.cost, backgroundColor:'rgba(243,156,18,0.65)', yAxisID:'y2'},
+    ]
+  },
+  options:{
+    plugins:{legend:{labels:{color:'#8892a4',font:{size:11}}}},
+    scales:{
+      x:{ticks:{color:'#8892a4',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},
+      y:{ticks:{color:ACCENT,font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.07)'},min:80,max:92},
+      y2:{position:'right',ticks:{color:YELLOW,font:{size:10},callback:v=>'$'+v},grid:{display:false},min:195,max:210}
+    }
+  }
+});
+
+// ─── CHART 3: Warehouse OTD Horizontal Bar ───────────────────────────────────
+const whSorted = [...wh].sort((a,b)=>b.otd-a.otd);
+new Chart(document.getElementById('warehouseOTD'), {
+  type:'bar',
+  data:{
+    labels: whSorted.map(w=>w.name.replace(' ','\n')),
+    datasets:[{
+      label:'OTD %',
+      data: whSorted.map(w=>w.otd),
+      backgroundColor: whSorted.map(w=>w.otd>=89?GREEN:w.otd>=87?ACCENT:YELLOW),
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:'#8892a4',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.07)'},min:82,max:92},
+      y:{ticks:{color:'#8892a4',font:{size:9}},grid:{display:false}}
+    }
+  }
+});
+
+// ─── CHART 4: Efficiency Score Radar-style bar ───────────────────────────────
+new Chart(document.getElementById('efficiencyChart'), {
+  type:'bar',
+  data:{
+    labels: wh.map(w=>w.name.split(' ')[0]),
+    datasets:[{
+      label:'Efficiency Score',
+      data: wh.map(w=>w.eff),
+      backgroundColor: wh.map(w=>w.eff>=54?GREEN:w.eff>=53?ACCENT:YELLOW),
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:'#8892a4',font:{size:9}},grid:{color:'rgba(255,255,255,0.05)'}},
+      y:{ticks:{color:'#8892a4',font:{size:10}},grid:{color:'rgba(255,255,255,0.07)'},min:50,max:56}
+    }
+  }
+});
+
+// ─── CHART 5: Delivery Status Donut ──────────────────────────────────────────
+new Chart(document.getElementById('statusDonut'), {
+  type:'doughnut',
+  data:{
+    labels:['On Time','Early','Late','Cancelled'],
+    datasets:[{
+      data:[7200,1167,1264,277],
+      backgroundColor:['rgba(46,204,113,0.8)','rgba(79,142,247,0.8)','rgba(231,76,60,0.8)','rgba(136,146,164,0.5)'],
+      borderWidth:0,
+    }]
+  },
+  options:{
+    plugins:{legend:{position:'bottom',labels:{color:'#8892a4',font:{size:10},padding:10}}},
+    cutout:'65%'
+  }
+});
+
+// ─── CHART 6: Monthly Cost Trend ─────────────────────────────────────────────
+new Chart(document.getElementById('costTrend'), {
+  type:'line',
+  data:{
+    labels: monthly.periods.map((p,i)=> i===0||i===12 ? `${p} ${monthly.years[i]}` :
+                                        i%3===0?p:''),
+    datasets:[{
+      label:'Avg Shipment Cost ($)',
+      data: monthly.cost,
+      borderColor: YELLOW, backgroundColor:'rgba(243,156,18,0.1)',
+      fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:YELLOW,
+    }]
+  },
+  options:{
+    ...chartDefaults,
+    scales:{...chartDefaults.scales,
+      y:{...chartDefaults.scales.y, min:190, max:215,
+         ticks:{...chartDefaults.scales.y.ticks, callback:v=>'$'+v}}
+    }
+  }
+});
+
+// ─── CHART 7: Priority OTD Bar ────────────────────────────────────────────────
+new Chart(document.getElementById('priorityChart'), {
+  type:'bar',
+  data:{
+    labels: priorities.names,
+    datasets:[{
+      label:'OTD %',
+      data: priorities.otd,
+      backgroundColor:[RED, YELLOW, ACCENT, GREEN],
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:'#8892a4'},grid:{color:'rgba(255,255,255,0.05)'}},
+      y:{ticks:{color:'#8892a4',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.07)'},min:84,max:90}
+    }
+  }
+});
+
+// ─── WAREHOUSE TABLE ─────────────────────────────────────────────────────────
+const tbody = document.getElementById('warehouseTable');
+[...wh].sort((a,b)=>b.otd-a.otd).forEach(w => {
+  const badgeClass = w.otd>=89?'badge-green':w.otd>=87?'badge-yellow':'badge-red';
+  tbody.innerHTML += `
+    <tr>
+      <td><strong>${w.name}</strong></td>
+      <td><span style="color:var(--muted)">${w.region}</span></td>
+      <td>${w.ships.toLocaleString()}</td>
+      <td><span class="badge ${badgeClass}">${w.otd.toFixed(1)}%</span></td>
+      <td>$${w.cost.toFixed(2)}</td>
+      <td>$${(w.total/1000).toFixed(0)}K</td>
+      <td style="color:${w.delay<0.5?'var(--green)':'var(--yellow)'}">+${w.delay.toFixed(2)}d</td>
+      <td style="color:${w.eff>=54?'var(--green)':'var(--accent)'}"><strong>${w.eff.toFixed(1)}</strong></td>
+      <td style="min-width:100px">
+        <div class="bar-fill">
+          <div class="bar-fill-inner" style="width:${((w.otd-82)/10*100).toFixed(0)}%;background:${w.otd>=89?'var(--green)':w.otd>=87?'var(--accent)':'var(--yellow)'}"></div>
+        </div>
+      </td>
+    </tr>`;
+});
+</script>
+</body>
+</html>
